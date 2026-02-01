@@ -1,0 +1,7 @@
+{
+  "name": "Panadería Pro - Sistema de Gestión Integral",
+  "description": "Una plataforma robusta para la gestión de producción, inventarios, red de ventas y análisis de costos para panaderías industriales con integración de IA para OCR de facturas.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
