@@ -44,7 +44,7 @@ const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
           product_id: p.id,
           product_name: p.nombre,
           quantity: 0,
-          unit_price: p.precios?.[profile?.rol || 'minorista'] || 0
+          unit_price: p.precios?.[profile?.role || 'minorista'] || 0
         }));
 
         setItems(mappedItems);
@@ -58,10 +58,10 @@ const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
       }
     };
 
-    if (profile?.rol) {
+    if (profile?.role) {
       fetchProducts();
     }
-  }, [profile?.rol, showToast]);
+  }, [profile?.role, showToast]);
 
   const updateQty = (idx: number, value: string) => {
     const qty = parseInt(value) || 0;
@@ -144,7 +144,7 @@ const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
     <div className="bg-white p-6 rounded-xl shadow-xl border animate-slideUp">
       <h3 className="text-xl font-bold mb-4 text-primary">Nuevo Pedido</h3>
       <p className="text-sm text-gray-500 mb-6">
-        Lista de precios aplicada: <span className="font-bold text-secondary uppercase">{profile?.rol}</span>
+        Lista de precios aplicada: <span className="font-bold text-secondary uppercase">{profile?.role}</span>
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
