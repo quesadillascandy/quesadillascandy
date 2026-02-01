@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { INITIAL_PRODUCTS } from '../../constants';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../services/supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
 import { OrderItem } from '../../types';
 
@@ -11,16 +11,40 @@ interface Props {
 
 const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
   const { profile } = useAuth();
-  const [items, setItems] = useState<any[]>(
-    INITIAL_PRODUCTS.map(p => ({
-      product_id: p.id,
-      product_name: p.name,
-      quantity: 0,
-      unit_price: p.prices[profile?.role || 'minorista'] || 0
-    }))
-  );
+  const [items, setItems] = useState<any[]>([]);
   const [notes, setNotes] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('productos')
+          .select('*')
+          .eq('activo', true);
+
+        if (error) throw error;
+
+        if (data) {
+          const mappedItems = data.map(p => ({
+            product_id: p.id,
+            product_name: p.nombre,
+            quantity: 0,
+            unit_price: p.precios[profile?.rol || 'minorista'] || 0
+          }));
+          setItems(mappedItems);
+        }
+      } catch (error) {
+        console.error('Error al cargar productos:', error);
+        alert('Error al cargar productos');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [profile]);
 
   const updateQty = (idx: number, delta: number) => {
     const newItems = [...items];
@@ -46,10 +70,20 @@ const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
     onSubmit(filteredItems, notes, deliveryDate);
   };
 
+  if (loading) {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow-xl border animate-slideUp">
+        <div className="text-center py-12">
+          <p className="text-gray-500">Cargando productos...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-xl border animate-slideUp">
       <h3 className="text-xl font-bold mb-4 text-primary">Nuevo Pedido</h3>
-      <p className="text-sm text-gray-500 mb-6">Lista de precios aplicada: <span className="font-bold text-secondary uppercase">{profile?.role}</span></p>
+      <p className="text-sm text-gray-500 mb-6">Lista de precios aplicada: <span className="font-bold text-secondary uppercase">{profile?.rol}</span></p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
@@ -60,13 +94,13 @@ const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
                 <p className="text-xs text-gray-400">${item.unit_price} / unidad</p>
               </div>
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   type="button"
                   onClick={() => updateQty(idx, -1)}
                   className="w-8 h-8 rounded-full bg-white border shadow-sm flex items-center justify-center font-bold"
                 >-</button>
                 <span className="w-8 text-center font-bold">{item.quantity}</span>
-                <button 
+                <button
                   type="button"
                   onClick={() => updateQty(idx, 1)}
                   className="w-8 h-8 rounded-full bg-primary text-white shadow-sm flex items-center justify-center font-bold"
@@ -79,8 +113,8 @@ const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-gray-400 mb-1 uppercase">Fecha de Entrega</label>
-            <input 
-              type="date" 
+            <input
+              type="date"
               className="w-full p-2 border rounded-lg"
               value={deliveryDate}
               onChange={e => setDeliveryDate(e.target.value)}
@@ -89,7 +123,7 @@ const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-400 mb-1 uppercase">Notas Especiales</label>
-            <textarea 
+            <textarea
               className="w-full p-2 border rounded-lg h-10"
               placeholder="Ej: Empaque especial para exportación..."
               value={notes}
@@ -104,12 +138,12 @@ const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
             <p className="text-3xl font-black text-secondary">${total.toLocaleString()}</p>
           </div>
           <div className="flex gap-3">
-            <button 
+            <button
               type="button"
               onClick={onCancel}
               className="px-6 py-2 text-gray-500 font-bold"
             >Cancelar</button>
-            <button 
+            <button
               type="submit"
               className="bg-primary text-white px-8 py-2 rounded-lg font-bold shadow-lg hover:brightness-110"
             >Confirmar Pedido</button>
