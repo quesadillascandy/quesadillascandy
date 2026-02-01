@@ -26,10 +26,15 @@ const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
         setLoading(true);
         setError(null);
 
+        console.log('🔍 DEBUG - Fetching products. Profile:', profile);
+        console.log('🔍 DEBUG - Profile role:', profile?.role);
+
         const { data, error: fetchError } = await supabase
           .from('productos')
           .select('*')
           .eq('activo', true);
+
+        console.log('🔍 DEBUG - Supabase response:', { data, error: fetchError });
 
         if (fetchError) {
           console.error('Error fetching products:', fetchError);
@@ -58,8 +63,13 @@ const OrderForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
       }
     };
 
+    console.log('🔍 DEBUG - useEffect ejecutado. Profile role:', profile?.role);
+
     if (profile?.role) {
+      console.log('✅ Profile role exists, calling fetchProducts');
       fetchProducts();
+    } else {
+      console.log('❌ Profile role is undefined, NOT calling fetchProducts');
     }
   }, [profile?.role, showToast]);
 

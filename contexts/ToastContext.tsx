@@ -73,7 +73,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                             )}
                         </div>
                         <div className="flex-1">
-                            <p className="text-sm font-semibold">{message}</p>
+                            <p className="text-sm font-semibold">{toast.message}</p>
                         </div>
                     </div>
                 ))}
