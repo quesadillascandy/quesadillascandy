@@ -84,7 +84,7 @@ export const useOrders = () => {
       setOrders([]);
       setLoading(false);
     }
-  }, [profile, user]);
+  }, [profile?.role, user?.id]); // ✅ Solo depende de valores primitivos, no objetos
 
   useEffect(() => {
     loadOrders();
@@ -109,7 +109,8 @@ export const useOrders = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [loadOrders]);
+  }, [profile?.role, user?.id]); // ✅ Depende de valores primitivos, no de loadOrders
+
 
   const createOrder = async (
     items: OrderItem[],
