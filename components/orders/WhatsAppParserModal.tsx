@@ -20,8 +20,26 @@ const WhatsAppParserModal: React.FC<Props> = ({ onConfirm, onClose }) => {
     try {
       const data = await parseWhatsAppOrder(text);
       setParsedData(data);
-    } catch (error) {
-      alert("No pudimos interpretar el pedido. Intenta copiar el texto de nuevo.");
+    } catch (error: any) {
+      console.error('Error en Candy Sync:', error);
+
+      // Mostrar error específico al usuario
+      let errorMessage = 'No pudimos interpretar el pedido.';
+
+      if (error.message) {
+        // Si el error tiene un mensaje específico, mostrarlo
+        if (error.message.includes('API Key')) {
+          errorMessage = '❌ Error de Configuración\n\nFalta la API Key de Gemini.\nVerifica que esté en tu archivo .env:\nVITE_GEMINI_API_KEY=tu-key-aqui\n\nLuego reinicia el servidor (Ctrl+C y npm run dev)';
+        } else if (error.message.includes('No se encontraron productos')) {
+          errorMessage = '⚠️ No encontré productos\n\nIntenta ser más específico:\n"Necesito 10 quesadillas grandes y 5 pequeñas"';
+        } else if (error.message.includes('quota') || error.message.includes('limit')) {
+          errorMessage = '🚫 Límite de API alcanzado\n\nLa API de Gemini tiene un límite gratuito.\nIntenta de nuevo en unos minutos.';
+        } else {
+          errorMessage = `❌ Error: ${error.message}\n\nIntenta copiar el texto de nuevo o escríbelo de forma más clara.`;
+        }
+      }
+
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -63,18 +81,17 @@ const WhatsAppParserModal: React.FC<Props> = ({ onConfirm, onClose }) => {
           {!parsedData ? (
             <div className="space-y-4">
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Pega aquí el mensaje del cliente:</label>
-              <textarea 
+              <textarea
                 className="w-full h-48 p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#25D366]/20 transition-all font-medium text-gray-600 italic"
                 placeholder='Ej: "Hola Candy, soy Juan. Mandame 10 quesadillas de las grandes para mañana porfa..." '
                 value={text}
                 onChange={(e) => setText(e.target.value)}
               />
-              <button 
+              <button
                 onClick={handleParse}
                 disabled={loading || !text.trim()}
-                className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl transition-all flex items-center justify-center gap-2 ${
-                  loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#25D366] text-white hover:brightness-110 active:scale-95'
-                }`}
+                className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl transition-all flex items-center justify-center gap-2 ${loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#25D366] text-white hover:brightness-110 active:scale-95'
+                  }`}
               >
                 {loading ? (
                   <>
@@ -123,11 +140,11 @@ const WhatsAppParserModal: React.FC<Props> = ({ onConfirm, onClose }) => {
               </div>
 
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => setParsedData(null)}
                   className="flex-1 py-4 text-gray-400 font-black uppercase text-xs tracking-widest"
                 >Corregir</button>
-                <button 
+                <button
                   onClick={handleFinalConfirm}
                   className="flex-[2] bg-orange-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-200 hover:brightness-110 active:scale-95 transition-all text-xs"
                 >Confirmar y Guardar</button>

@@ -1,11 +1,19 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { INITIAL_PRODUCTS } from "../constants";
 
 export async function parseWhatsAppOrder(text: string) {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('API Key de Gemini no configurada. Agrega VITE_GEMINI_API_KEY en tu archivo .env');
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-exp-1206" });
+
   const today = new Date().toISOString().split('T')[0];
-  
+
   const productContext = INITIAL_PRODUCTS.map(p => `- ${p.name} (ID: ${p.id})`).join('\n');
 
   const prompt = `
@@ -24,51 +32,40 @@ export async function parseWhatsAppOrder(text: string) {
 
     RESPONDE SOLO EN JSON con este esquema:
     {
-      "client_name": string,
-      "client_phone": string,
-      "items": [ { "product_id": string, "product_name": string, "quantity": number } ],
-      "delivery_date": string,
-      "notes": string
+      "client_name": "nombre del cliente o null",
+      "client_phone": "teléfono o null",
+      "items": [ { "product_id": "id del producto", "product_name": "nombre", "quantity": número } ],
+      "delivery_date": "YYYY-MM-DD",
+      "notes": "notas adicionales o vacío"
     }
     
     MENSAJE DE WHATSAPP:
     "${text}"
+
+    Responde ÚNICAMENTE con el JSON, sin texto adicional.
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            client_name: { type: Type.STRING },
-            client_phone: { type: Type.STRING },
-            items: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  product_id: { type: Type.STRING },
-                  product_name: { type: Type.STRING },
-                  quantity: { type: Type.NUMBER }
-                },
-                required: ["product_id", "quantity"]
-              }
-            },
-            delivery_date: { type: Type.STRING },
-            notes: { type: Type.STRING }
-          },
-          required: ["items", "delivery_date"]
-        }
-      }
-    });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const responseText = response.text();
 
-    return JSON.parse(response.text || '{}');
-  } catch (error) {
+    console.log('Respuesta de Gemini:', responseText);
+
+    // Limpiar respuesta por si viene con markdown
+    const cleanText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    const parsed = JSON.parse(cleanText);
+
+    // Validar que tenga items
+    if (!parsed.items || parsed.items.length === 0) {
+      throw new Error('No se encontraron productos en el mensaje');
+    }
+
+    return parsed;
+  } catch (error: any) {
     console.error("WhatsApp Parsing failed", error);
-    throw error;
+    console.error("Error details:", error.message);
+    throw new Error('No pudimos interpretar el pedido. Intenta copiar el texto de nuevo.');
   }
 }

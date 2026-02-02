@@ -3,6 +3,7 @@ import React from 'react';
 import { Order, OrderStatus, UserRole } from '../../types';
 import OrderStatusBadge from './OrderStatusBadge';
 import { useAuth } from '../../hooks/useAuth';
+import { DescargarPDFButton } from '../reportes/DescargarPDFButton';
 
 interface Props {
   order: Order;
@@ -12,7 +13,7 @@ interface Props {
 
 const OrderDetail: React.FC<Props> = ({ order, onUpdateStatus, onClose }) => {
   const { profile } = useAuth();
-  
+
   const canUpdate = () => {
     if (profile?.role === UserRole.ADMIN) return true;
     if (profile?.role === UserRole.PROD_MANAGER) {
@@ -88,17 +89,22 @@ const OrderDetail: React.FC<Props> = ({ order, onUpdateStatus, onClose }) => {
               </div>
             </section>
 
+            <section>
+              <h3 className="text-xs font-black text-gray-400 uppercase mb-3 tracking-widest">Descargar</h3>
+              <DescargarPDFButton pedido={order} variant="secondary" className="w-full" />
+            </section>
+
             {canUpdate() && next && (
               <section className="bg-secondary/10 p-4 rounded-xl border border-secondary/20">
                 <h3 className="text-xs font-black text-secondary uppercase mb-3 tracking-widest">Acción de Flujo</h3>
-                <button 
+                <button
                   onClick={() => onUpdateStatus(order.id, next)}
                   className="w-full bg-secondary text-white py-3 rounded-lg font-bold shadow-lg hover:scale-105 transition-all"
                 >
                   Pasar a {next.replace('_', ' ')}
                 </button>
                 {order.status === OrderStatus.PENDIENTE && (
-                  <button 
+                  <button
                     onClick={() => onUpdateStatus(order.id, OrderStatus.CANCELADO)}
                     className="w-full mt-2 text-error font-bold text-sm py-2"
                   >
